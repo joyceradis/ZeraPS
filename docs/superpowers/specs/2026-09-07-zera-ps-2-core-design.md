@@ -1,7 +1,7 @@
 # Zera PS 2.0 — Core Architecture Design
 
-**Status:** Approved design baseline
-**Date:** 2026-09-07
+**Status:** Approved design baseline  
+**Date:** 2026-09-07  
 **Branch:** `zera-ps-2-design`
 
 ## 1. Objective
@@ -40,7 +40,7 @@ The application is not a diagnostic system, autonomous prescriber, disposition e
 - One reference protocol used to validate the architecture end to end.
 - Score lifecycle with distinct available/applicable/calculable/applied states.
 - PWA shell and offline cache.
-- Automated unit, integration, regression, and persistence tests.
+- Automated unit, integration, regression, persistence, and browser tests.
 
 ### Explicitly excluded from Core
 
@@ -57,7 +57,23 @@ The application is not a diagnostic system, autonomous prescriber, disposition e
 - Analytics dashboard.
 - Billing or authorization automation.
 
-## 4. Architectural strategy
+## 4. Technology decisions
+
+Core uses a deliberately small toolchain:
+
+- **TypeScript** with strict type checking.
+- **Vite** for development and production bundling.
+- **Native DOM APIs** for the Core UI; no React/Vue/Svelte framework in this phase.
+- **IndexedDB** behind a repository abstraction; a thin helper library may be used if it does not leak into application/domain layers.
+- **Vitest** for unit/integration tests.
+- **fake-indexeddb** for deterministic persistence tests where appropriate.
+- **Playwright** for browser, reload, responsive, and offline behavior tests.
+
+TypeScript configuration must enable strictness sufficient to catch unsafe optional-state handling. Domain semantics must not depend on compiler coercion or truthy/falsy shortcuts.
+
+A framework may be reconsidered only if the native UI becomes a demonstrated maintenance bottleneck; it is not introduced preemptively.
+
+## 5. Architectural strategy
 
 The new implementation will not extend the current `assets/` + `src/` dual architecture. Legacy code is treated as a source of requirements and regression behavior, not as the runtime foundation.
 
@@ -107,12 +123,13 @@ tests/
 ├── persistence/
 ├── protocols/
 ├── documents/
+├── browser/
 └── regression/
 ```
 
 The file tree may gain small focused files during implementation, but responsibilities must remain within these boundaries.
 
-## 5. Core aggregate: Attendance
+## 6. Core aggregate: Attendance
 
 `Attendance` is the single aggregate root for a patient encounter.
 
@@ -124,15 +141,17 @@ Attendance
 ├── createdAt
 ├── updatedAt
 ├── stage
+├── stageHistory[]
 ├── admission
 ├── pendingItems[]
 ├── results[]
 ├── reassessments[]
 ├── appliedTools[]
 ├── outcome
-├── documentSnapshots[]
-└── timeline[]
+└── documentDrafts[]
 ```
+
+The audit log is deliberately **not** stored as `timeline[]` inside the aggregate. Clinical temporal history lives in explicit domain collections such as `stageHistory`, `results`, and `reassessments`. Audit events are a separate append-only persistence concern described later.
 
 ### Stages
 
@@ -162,9 +181,9 @@ Minimum sections:
 - HD
 - CONDUTA
 
-Once the first reassessment is created, previously established admission content cannot be silently rewritten by later results or later clinical state.
+Once the first reassessment is created, later results and later clinical state cannot silently rewrite the admission snapshot. If a genuine correction of the original admission is required, it must be an explicit correction action with traceable provenance rather than an incidental side effect of reassessment.
 
-## 6. Clinical value model
+## 7. Clinical value model
 
 A clinical field cannot be represented as a primitive boolean when information state matters.
 
@@ -181,11 +200,13 @@ type ClinicalInformationState =
 interface ClinicalValue<T> {
   state: ClinicalInformationState;
   value?: T;
-  source: ClinicalSource;
+  source?: ClinicalSource;
   observedAt?: string;
   confirmedAt?: string;
 }
 ```
+
+`source` is optional while the field is `unknown`. A meaningful clinical state (`present`, `denied`, `not_informed`, or `not_assessed`) must carry provenance appropriate to that state. The system must never invent a source merely to satisfy a storage schema.
 
 `ClinicalSource` identifies provenance such as patient report, companion report, examination, laboratory, imaging, external document, or physician synthesis.
 
@@ -198,11 +219,11 @@ interface ClinicalValue<T> {
 - a template cannot mark a finding as performed or negative.
 - imported/migrated data cannot gain confirmation it did not previously have.
 
-These constraints must be enforced both by types and tests.
+These constraints must be enforced by domain constructors/validators and tests, not only by UI conventions.
 
-## 7. Temporal events
+## 8. Temporal events
 
-New results are additive temporal events.
+New results are additive temporal entities.
 
 Examples:
 
@@ -219,7 +240,7 @@ A later result never overwrites an earlier result.
 
 Reassessment is also additive. Each reassessment stores its own timestamp, delta narrative, updated examination, new results available at that time, current hypothesis, and current conduct.
 
-## 8. Reassessment contract
+## 9. Reassessment contract
 
 Reassessment belongs to the same `Attendance` and never replaces admission.
 
@@ -252,9 +273,9 @@ Generated documentation follows this semantic structure:
 
 Old conduct is never represented as current conduct simply because it exists in the attendance history.
 
-## 9. Workspace and clinical document are separate products surfaces
+## 10. Workspace and clinical document are separate product surfaces
 
-The system has two semantic outputs from the same attendance state:
+The system has two semantic outputs from the same attendance state.
 
 ### Operational workspace
 
@@ -275,7 +296,7 @@ May contain only content explicitly authorized by the clinical state and documen
 
 Operational warnings, UI labels, internal flags, and incomplete-state hints must never leak automatically into the clinical record.
 
-## 10. Application layer
+## 11. Application layer
 
 All state-changing actions use commands. Examples:
 
@@ -287,6 +308,7 @@ All state-changing actions use commands. Examples:
 - `UpdateReassessment`
 - `ApplyScore`
 - `ChangeOutcome`
+- `CorrectAdmission`
 - `FinalizeAttendance`
 
 Queries derive read models without mutating state. Examples:
@@ -297,7 +319,7 @@ Queries derive read models without mutating state. Examples:
 
 Commands enforce invariants before repository persistence.
 
-## 11. Protocol architecture
+## 12. Protocol architecture
 
 The core does not know specific diseases or syndromes.
 
@@ -324,9 +346,24 @@ No protocol may:
 - automatically apply a score;
 - bypass domain invariants.
 
-The Core ships with exactly one reference protocol sufficient to exercise admission, pending results, reassessment, score lifecycle, and final outcome. Additional protocols are a subsequent project.
+### Core reference protocol
 
-## 12. Scores and clinical tools
+The Core reference protocol is **dor torácica** as a presentation, not SCA as a presumed diagnosis.
+
+It may expose a context such as suspected acute coronary syndrome only after explicit clinician selection or compatible confirmed data, but the entry point remains the symptom/presentation.
+
+This protocol must exercise:
+
+- admission documentation;
+- initial ECG/troponin pending states;
+- serial results;
+- reassessment;
+- HEART lifecycle when applicable;
+- discharge/admission outcome.
+
+Additional protocols are a subsequent project.
+
+## 13. Scores and clinical tools
 
 Every tool has four distinct states:
 
@@ -345,7 +382,9 @@ A calculated result is not automatically documented. Documentation requires expl
 
 Incomplete scores never render as zero.
 
-## 13. Document engine
+The Core reference implementation uses HEART to prove this contract, without making HEART universally applicable to every chest-pain attendance.
+
+## 14. Document engine and manual edits
 
 The document engine is pure and deterministic.
 
@@ -357,13 +396,27 @@ Inputs:
 
 Output:
 
-- plain clinical text or structured document representation that can be rendered to text.
+- structured document representation and/or plain clinical text derived from it.
 
 The engine cannot read DOM, mutate storage, infer hidden clinical state, or trigger workflow transitions.
 
-Manual physician edits are protected. Regeneration must not silently overwrite manually edited clinical text. The implementation must make provenance of generated versus manually edited sections explicit enough to preserve this invariant.
+### Manual-edit protection
 
-## 14. Persistence
+A document shown in the in-app editor has explicit generation/edit state. At minimum, a `DocumentDraft` records:
+
+```text
+id
+type
+baseGeneratedText
+currentText
+generatedAt
+editedAt?
+isManuallyEdited
+```
+
+Once `currentText` diverges through physician editing, regeneration may produce a preview but must not replace `currentText` without an explicit replace/regenerate action. No autosave, protocol update, score update, or new result may silently destroy manually edited clinical text.
+
+## 15. Persistence
 
 ### Primary store
 
@@ -386,16 +439,16 @@ archive
 ### Persistence behavior
 
 - autosave after meaningful state changes;
-- atomic persistence of one attendance snapshot plus corresponding audit event set;
+- atomic persistence of one attendance snapshot plus corresponding audit events in a single IndexedDB transaction when both are produced by the same command;
 - schema versioning from the first release;
 - migrations are explicit functions with tests;
 - failed migration must not silently reinterpret clinical meaning.
 
 Legacy local data are not automatically imported into the new runtime in Core. A later migration project may provide an explicit, reviewed importer.
 
-## 15. Audit timeline
+## 16. Audit log
 
-Clinically meaningful state changes produce append-only audit events.
+Clinically meaningful state changes produce append-only audit events stored separately from the aggregate snapshot.
 
 Initial event vocabulary:
 
@@ -407,14 +460,16 @@ Initial event vocabulary:
 - `REASSESSMENT_UPDATED`
 - `SCORE_APPLIED`
 - `OUTCOME_CHANGED`
+- `ADMISSION_CORRECTED`
 - `DOCUMENT_GENERATED`
+- `DOCUMENT_MANUALLY_EDITED`
 - `ATTENDANCE_FINALIZED`
 
-Audit events are not a replacement for the attendance snapshot. They provide traceability: what changed, when, and through which application command.
+Audit events are not event sourcing and are not required to reconstruct the aggregate. They provide traceability: what changed, when, and through which application command.
 
 No background telemetry or external transmission is included.
 
-## 16. UI principles
+## 17. UI principles
 
 The UI is a thin client over application commands and queries.
 
@@ -433,7 +488,7 @@ Requirements:
 
 The UI may improve ergonomics without changing clinical semantics.
 
-## 17. PWA and offline behavior
+## 18. PWA and offline behavior
 
 The application must remain functional without network connectivity after first successful load.
 
@@ -443,7 +498,7 @@ Clinical data stay in IndexedDB on the device.
 
 Core includes no network API for clinical data.
 
-## 18. Safety invariants
+## 19. Safety invariants
 
 These are non-negotiable system contracts:
 
@@ -465,10 +520,12 @@ These are non-negotiable system contracts:
 16. Physician-edited clinical text cannot be silently overwritten by a generator.
 17. UI navigation cannot itself change clinical stage or clinical truth.
 18. Persistence failure cannot be presented as successful save.
+19. A correction of admission must be explicit and traceable; reassessment is not a correction mechanism.
+20. Missing provenance must remain missing rather than be fabricated to satisfy a schema.
 
-## 19. Error handling
+## 20. Error handling
 
-Errors are classified into four categories:
+Errors are classified into four categories.
 
 ### Validation error
 
@@ -488,7 +545,7 @@ Failure to render one view or document must not mutate the underlying attendance
 
 All errors exposed to the user must be actionable and must avoid implying clinical conclusions.
 
-## 20. Testing strategy
+## 21. Testing strategy
 
 ### Domain tests
 
@@ -498,8 +555,10 @@ Mandatory examples:
 
 - blank field does not produce `NEGA`;
 - denied requires explicit denied state;
+- meaningful non-unknown state requires valid provenance;
 - result seriality is preserved;
 - reassessment cannot overwrite admission;
+- explicit admission correction is traceable;
 - incomplete score has no result;
 - calculated score is not documented until applied.
 
@@ -509,11 +568,11 @@ Test commands against an in-memory repository.
 
 ### Persistence tests
 
-Test IndexedDB adapter and migrations separately from domain behavior.
+Test IndexedDB adapter, transactions, failed writes, and migrations separately from domain behavior.
 
 ### Document tests
 
-Golden tests for exact clinical-document contracts, including admission and reassessment.
+Golden tests for exact clinical-document contracts, including admission and reassessment. Add explicit tests proving that regeneration cannot silently overwrite a manually edited `DocumentDraft`.
 
 ### Protocol tests
 
@@ -525,11 +584,11 @@ Port only legacy behaviors intentionally retained. Legacy code itself is not imp
 
 ### Browser/PWA tests
 
-Validate autosave, reload restoration, offline shell, responsive behavior, and copy output.
+Validate autosave, failed-save state, reload restoration, offline shell, responsive behavior, and copy output.
 
 No release is considered clinically validated solely because CI is green.
 
-## 21. Migration and coexistence strategy
+## 22. Migration and coexistence strategy
 
 The existing `main` remains untouched while Zera PS 2.0 is built on an isolated feature branch/worktree.
 
@@ -547,57 +606,60 @@ legacy requirement
 
 There is no in-place architectural conversion of legacy modules.
 
-## 22. First reference vertical slice
+## 23. First reference vertical slice
 
 The first implementation must prove this end-to-end flow:
 
 ```text
-start attendance
+start chest-pain attendance
 → document QP/HDA/HPP/EXAME/EXAMES/HD/CONDUTA
 → autosave
 → register initial conduct
-→ create pending items
+→ create ECG/troponin pending items
 → record temporal result
 → reassess in same attendance
-→ optionally calculate/apply one score
+→ evaluate HEART lifecycle when applicable
+→ explicitly apply HEART if chosen
 → generate reassessment document
 → define discharge or admission outcome
 → finalize attendance
 → reload offline and preserve state
 ```
 
-The reference protocol should be chosen for workflow richness, not for breadth of clinical content. Its purpose is architectural validation.
+The protocol's purpose is architectural validation, not exhaustive chest-pain decision support.
 
-## 23. Acceptance criteria for Core
+## 24. Acceptance criteria for Core
 
 Core is complete only when all of the following are true:
 
 - one complete attendance can be performed without legacy runtime modules;
 - the entire attendance survives browser reload through IndexedDB;
 - the app remains usable offline after initial load;
-- admission is immutable with respect to later reassessment history;
+- later reassessment cannot silently mutate admission history;
+- an explicit admission correction is separately traceable;
 - serial results remain distinct temporal entities;
 - no blank/default state produces a clinical negative;
-- one reference protocol drives progressive disclosure without scenario-specific branches in generic engines;
-- one clinical score demonstrates available/applicable/calculable/applied separation;
+- no non-unknown clinical state is persisted with fabricated provenance;
+- the dor-torácica protocol drives progressive disclosure without scenario-specific branches in generic engines;
+- HEART demonstrates available/applicable/calculable/applied separation;
 - generated admission and reassessment documents satisfy exact regression contracts;
 - physician manual edits are not silently overwritten;
 - persistence failures are surfaced accurately;
-- all mandatory domain, application, persistence, protocol, document, and regression tests pass;
+- all mandatory domain, application, persistence, protocol, document, regression, and browser tests pass;
 - no clinical data are transmitted to a backend.
 
-## 24. Deferred follow-on projects
+## 25. Deferred follow-on projects
 
 Only after Core reaches the acceptance criteria:
 
 1. protocol library migration;
 2. richer document types and justification documents;
 3. explicit legacy-data importer if still necessary;
-4. expanded browser automation and accessibility hardening;
+4. expanded accessibility hardening and broader browser matrix;
 5. optional future sync/backend design under a separate privacy/security review.
 
-## 25. Decision summary
+## 26. Decision summary
 
 Zera PS 2.0 Core will be a TypeScript, browser-native, offline-first clinical documentation system centered on a temporal `Attendance` aggregate, explicit clinical information states, declarative protocols, pure document generation, IndexedDB persistence, append-only audit events, and strict separation between operational workspace and clinical record.
 
-The new runtime will not inherit the current architectural duality. It will inherit only reviewed product behavior and safety contracts.
+The first reference vertical slice is dor torácica with serial ECG/troponin workflow and HEART only when applicable. The new runtime will not inherit the current architectural duality; it will inherit only reviewed product behavior and safety contracts.
