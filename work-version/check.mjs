@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {evaluate,evolution} from './dist/engine.js';
+const s={id:'a',start:'2099-09-07T10:00:00Z',end:'2099-09-07T16:00:00Z',role:'extra'};
+assert.equal(evaluate(s,[]).ok,true);
+assert.equal(evaluate({...s,role:'cardio'},[]).ok,false);
+assert.equal(evaluate({...s,role:'reavaliador'},[]).ok,false);
+assert.equal(evaluate(s,[{...s,id:'b',status:'confirmed'}]).ok,false);
+assert.equal(evaluate({...s,end:s.start},[]).ok,false);
+assert.equal(evaluate({...s,start:'invalid'},[]).ok,false);
+assert.equal(evaluate({...s,role:'unknown'},[]).ok,false);
+const p={HDA:'admissão original',events:[{at:'2026-09-08T00:00:00Z',text:'nova informação'}]};
+const t=evolution(p);assert(t.includes('# HDA\nADMISSÃO ORIGINAL'));assert(t.includes('# EM TEMPO'));assert(t.includes('# HPP\nNA'));assert.equal(p.HDA,'admissão original');
+console.log('10 verificações aprovadas: documentação e elegibilidade.');
