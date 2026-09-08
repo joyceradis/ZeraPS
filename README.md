@@ -1,5 +1,19 @@
 # Zera PS
 
+## Versão ativa · 08/09/2026
+
+**[Abrir Zera PS](https://joyceradis.github.io/ZeraPS/)** · [Código da versão ativa](work-version/)
+
+A entrada principal `index.html` agora abre a nova interface clínica. O GitHub Pages publica a branch `main`; a atualização não depende de abrir uma subpasta. A versão Work também está disponível em https://zera-ps.joyceradis.chatgpt.site.
+
+Esta versão contém documentação manual, reavaliações, passagem de caso e backup. Não possui IA integrada. O Plantão Bot é outro projeto, em repositório próprio.
+
+O código anterior permanece em `app.html`, `src/`, `assets/` e `protocols/`. Os dados locais não são apagados. A documentação abaixo descreve essa base anterior, cujas ferramentas ainda não foram incorporadas integralmente à interface nova.
+
+A análise de segurança permanece no CodeQL padrão do GitHub, que já estava habilitado. O workflow Advanced redundante foi retirado porque suas submissões eram rejeitadas por conflito com essa configuração. Os testes clínicos e a suíte anterior continuam ativos.
+
+## Documentação da base anterior
+
 > **O paciente deve ser ouvido. O médico não deve redigitar a mesma história.**
 
 O **Zera PS** é uma plataforma de documentação clínica sem fricção, orientada por síndromes e sustentada por rigor metodológico. Nasceu para devolver tempo clínico ao encontro entre médico e paciente em um pronto-socorro que frequentemente exige quatro a cinco atendimentos por hora.

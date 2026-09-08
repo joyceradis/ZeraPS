@@ -1,1 +1,21 @@
-bash -l -c ' set -e OWNER="joyceradis" REPO="ZeraPS" TAG="v2026-08-16" TITLE="Release 2026-08-16
+name: Clinical workspace checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - name: Verify clinical workspace
+        run: |
+          node --check work-version/dist/app.js
+          node --check service-worker.js
+          node work-version/check.mjs
