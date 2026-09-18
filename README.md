@@ -1,74 +1,34 @@
 # Zera PS
 
-## Versão ativa · 08/09/2026
+**Estação clínica de pronto-socorro orientada a workflow, temporalidade e segurança documental.**
 
-**[Abrir Zera PS](https://joyceradis.github.io/ZeraPS/)** · [Código da versão ativa](work-version/)
+[**Abrir aplicação**](https://joyceradis.github.io/ZeraPS/) · [Versão de trabalho](work-version/) · [Roadmap](ROADMAP.md)
 
-A entrada principal `index.html` agora abre a nova interface clínica. O GitHub Pages publica a branch `main`; a atualização não depende de abrir uma subpasta. A versão Work também está disponível em https://zera-ps.joyceradis.chatgpt.site.
+O Zera PS nasceu de um problema concreto de emergência: quando o volume assistencial sobe, tempo de escuta é consumido por redigitação, navegação e reconstrução da mesma história em documentos sucessivos.
 
-Esta versão contém documentação manual, reavaliações, passagem de caso e backup. Não possui IA integrada. O Plantão Bot é outro projeto, em repositório próprio.
+> **Reduzir documentação é o meio. Devolver tempo clínico ao paciente é o fim.**
 
-O código anterior permanece em `app.html`, `src/`, `assets/` e `protocols/`. Os dados locais não são apagados. A documentação abaixo descreve essa base anterior, cujas ferramentas ainda não foram incorporadas integralmente à interface nova.
+O projeto explora como uma interface pode reutilizar informação confirmada ao longo do atendimento sem fabricar fatos, aumentar artificialmente a certeza clínica ou apagar a temporalidade do prontuário.
 
-A análise de segurança permanece no CodeQL padrão do GitHub, que já estava habilitado. O workflow Advanced redundante foi retirado porque suas submissões eram rejeitadas por conflito com essa configuração. Os testes clínicos e a suíte anterior continuam ativos.
-
-## Documentação da base anterior
-
-> **O paciente deve ser ouvido. O médico não deve redigitar a mesma história.**
-
-O **Zera PS** é uma plataforma de documentação clínica sem fricção, orientada por síndromes e sustentada por rigor metodológico. Nasceu para devolver tempo clínico ao encontro entre médico e paciente em um pronto-socorro que frequentemente exige quatro a cinco atendimentos por hora.
-
-No modelo-alvo, a médica começa por uma síndrome ou apresentação clínica, recebe uma HDA semipronta e editável, registra o dado uma vez e o reutiliza com segurança ao longo da evolução, reavaliação, internação ou alta. *Cores* clínicos, pendências, protocolos e scores aparecem conforme contexto e etapa — sem presumir diagnóstico, fabricar informação ou substituir julgamento médico.
-
-## Finalidade
-
-O problema principal não é a falta de mais um formulário ou protocolo. É o tempo de escuta consumido por digitação repetitiva, navegação e reconstrução da mesma história em documentos sucessivos.
-
-> **Reduzir documentação é o meio. Devolver tempo ao paciente é o fim.**
-
-Apoio à decisão, workflow temporal e ferramentas clínicas são camadas subordinadas a essa finalidade.
-
-## Como o produto pensa
+## Modelo do produto
 
 ```text
-SÍNDROME OU APRESENTAÇÃO
-   ↓
-HDA SEMIPRONTA E EDITÁVEL
-   ↓
-DADO CONFIRMADO REGISTRADO UMA VEZ
-   ↓
+SÍNDROME / APRESENTAÇÃO
+        ↓
+HDA EDITÁVEL
+        ↓
+DADO CONFIRMADO UMA VEZ
+        ↓
 CONTEXTO + ETAPA DO ATENDIMENTO
-   ↓
-CORES / PENDÊNCIAS / RESULTADOS / FERRAMENTAS
-   ↓
-DOCUMENTOS REVISÁVEIS SEM REDIGITAÇÃO INTEGRAL
+        ↓
+PENDÊNCIAS / RESULTADOS / FERRAMENTAS
+        ↓
+REAVALIAÇÃO E DOCUMENTAÇÃO FINAL
 ```
 
-**Princípio central:** nenhuma transformação documental pode aumentar o grau de certeza, alterar a polaridade ou fabricar um fato clínico ausente.
+## Diferencial arquitetural
 
-**Princípio de interação:** a interface deve ser previsível, keyboard-first e parcimoniosa em cliques, confirmações e mudanças de tela. Reduzir digitação criando nova fricção mental não é sucesso.
-
-## Estado atual
-
-O projeto já possui fundação de segurança clínico-documental, testes automatizados, CI e um primeiro workflow temporal de referência para **dor torácica / suspeita de SCA**.
-
-Principais capacidades atuais:
-
-- evolução estruturada;
-- todos os roteiros abrem com HDA integral editável; a síndrome diarreica também possui compositor estruturado para refinar o rascunho sem redigitação;
-- reavaliação vinculada ao mesmo Atendimento;
-- HPP com negativas apenas por ação explícita;
-- modelo de exame físico normal confirmado pela médica;
-- campos condicionais por cenário + etapa + contexto, renderizados a partir da configuração do protocolo;
-- pendências e resultados de ECG/troponina no workflow de referência;
-- HEART com `disponível ≠ aplicável ≠ calculável`;
-- CRB-65, CURB-65, qSOFA e Glasgow sem falso resultado inicial;
-- autosave, rascunhos locais e funcionamento PWA offline-first;
-- regressão automatizada e auditorias por marco.
-
-> O Zera PS permanece **MVP em validação**. CI verde não equivale a homologação assistencial.
-
-## Workflow temporal
+O Zera PS trata o atendimento como uma sequência temporal, não como um formulário único:
 
 ```text
 initial_assessment
@@ -78,43 +38,58 @@ initial_assessment
 → final_documentation
 ```
 
-A reavaliação pertence ao mesmo Atendimento e preserva a admissão. O contrato documental atual mantém, entre outras regras, `# QP: "..."` inline, `# SCORES:` abaixo da QP quando houver resultado válido e `# HDA (ADMISSÃO):` preservando o contexto inicial.
+A reavaliação pertence ao mesmo atendimento e preserva a admissão. Resultado novo não reescreve retrospectivamente o que era conhecido antes.
+
+## Capacidades atuais
+
+- evolução clínica estruturada;
+- HDA integral e editável nos roteiros;
+- reavaliação vinculada ao atendimento;
+- HPP com negativas apenas por ação explícita;
+- exame físico normal dependente de confirmação;
+- campos condicionais por cenário, etapa e contexto;
+- pendências e resultados no workflow de referência para dor torácica / suspeita de SCA;
+- HEART com distinção entre ferramenta disponível, aplicável e calculável;
+- CRB-65, CURB-65, qSOFA e Glasgow sem falso resultado inicial;
+- autosave e rascunhos locais;
+- PWA offline-first;
+- testes automatizados e CI;
+- documentação técnica de arquitetura, segurança e invariantes.
+
+## Invariantes de segurança
+
+- vazio ≠ `NEGA`;
+- não informado ≠ não investigado;
+- template ≠ exame realizado;
+- sugestão ≠ fato clínico;
+- score incompleto ≠ zero;
+- disponível ≠ aplicável ≠ calculável;
+- síndrome/apresentação ≠ diagnóstico presumido;
+- reavaliação não sobrescreve admissão;
+- resultado novo não altera retrospectivamente o estado anterior;
+- reutilizar dado não remove contexto, proveniência ou temporalidade;
+- toda saída clínica permanece revisável pela médica.
 
 ## Arquitetura
 
 ```text
-Zera-PS/
+ZeraPS/
 ├── index.html
 ├── app.html
-├── app.js               # entrypoint do módulo ES
-├── manifest.json        # PWA
-├── service-worker.js    # app shell offline-first
-├── src/                 # workflow temporal, contrato de protocolos e coordenação atual
-├── protocols/           # configurações clínicas declarativas
-├── assets/              # fundação documental estabilizada
+├── app.js
+├── manifest.json
+├── service-worker.js
+├── src/                 # workflow temporal e coordenação
+├── protocols/           # configuração clínica declarativa
+├── assets/              # fundação documental
 ├── tests/               # regressão automatizada
-├── docs/                # documentação técnica organizada por domínio
+├── docs/                # produto, arquitetura, segurança e testes
 ├── README.md
 ├── ROADMAP.md
 └── CHANGELOG.md
 ```
 
-A migração arquitetural é incremental: a fundação estável em `assets/` permanece enquanto a camada temporal em `src/` amadurece, evitando perda de microfunções já estabilizadas.
-
-## Contratos de segurança
-
-- vazio ≠ `NEGA`;
-- não informado ≠ não investigado;
-- template ≠ exame realizado sem confirmação;
-- sugestão ≠ fato clínico;
-- score incompleto ≠ zero;
-- ferramenta disponível ≠ aplicável ≠ calculável;
-- reavaliação não sobrescreve admissão;
-- resultado novo não reescreve retrospectivamente dado anterior;
-- migração técnica não fabrica confirmação clínica;
-- saída permanece editável e revisável;
-- síndrome/apresentação ≠ diagnóstico presumido;
-- reutilizar dado ≠ retirar contexto, proveniência ou temporalidade;
+A migração arquitetural é incremental: componentes estabilizados permanecem preservados enquanto a camada temporal amadurece.
 
 ## Verificação
 
@@ -124,24 +99,21 @@ Requer Node.js 24+.
 npm run verify
 ```
 
-O comando executa verificação de sintaxe e toda a suíte automatizada. Testes manuais em navegador desktop/mobile e PWA continuam sendo gates independentes.
+O comando executa verificações automatizadas da base. Testes manuais em navegador, mobile e PWA permanecem gates independentes.
 
-## Documentação
+## Documentação técnica
 
 | Área | Documento |
 | --- | --- |
-| Índice técnico | [`docs/README.md`](docs/README.md) |
-| Escopo do produto | [`docs/product/PRODUCT_SCOPE.md`](docs/product/PRODUCT_SCOPE.md) |
-| Workflows | [`docs/product/WORKFLOWS.md`](docs/product/WORKFLOWS.md) |
-| Arquitetura | [`docs/architecture/ARCHITECTURE.md`](docs/architecture/ARCHITECTURE.md) |
-| Contrato de protocolos | [`docs/architecture/PROTOCOL_CONTRACT.md`](docs/architecture/PROTOCOL_CONTRACT.md) |
-| Workflow temporal | [`docs/architecture/TEMPORAL_WORKFLOW.md`](docs/architecture/TEMPORAL_WORKFLOW.md) |
-| Segurança clínica | [`docs/safety/CLINICAL_SAFETY.md`](docs/safety/CLINICAL_SAFETY.md) |
-| Invariantes | [`docs/safety/INVARIANTS.md`](docs/safety/INVARIANTS.md) |
-| Testes e gates | [`docs/testing/TESTING.md`](docs/testing/TESTING.md) |
-| Roadmap | [`ROADMAP.md`](ROADMAP.md) |
-
-Auditorias históricas ficam deliberadamente separadas em [`docs/audits/`](docs/audits/).
+| Índice | [`docs/README.md`](docs/README.md) |
+| Escopo | [`PRODUCT_SCOPE.md`](docs/product/PRODUCT_SCOPE.md) |
+| Workflows | [`WORKFLOWS.md`](docs/product/WORKFLOWS.md) |
+| Arquitetura | [`ARCHITECTURE.md`](docs/architecture/ARCHITECTURE.md) |
+| Contrato de protocolos | [`PROTOCOL_CONTRACT.md`](docs/architecture/PROTOCOL_CONTRACT.md) |
+| Workflow temporal | [`TEMPORAL_WORKFLOW.md`](docs/architecture/TEMPORAL_WORKFLOW.md) |
+| Segurança clínica | [`CLINICAL_SAFETY.md`](docs/safety/CLINICAL_SAFETY.md) |
+| Invariantes | [`INVARIANTS.md`](docs/safety/INVARIANTS.md) |
+| Testes | [`TESTING.md`](docs/testing/TESTING.md) |
 
 ## Desenvolvimento local
 
@@ -149,11 +121,19 @@ Auditorias históricas ficam deliberadamente separadas em [`docs/audits/`](docs/
 python3 -m http.server 8000
 ```
 
-Acesse `http://localhost:8000`.
+Depois acesse `http://localhost:8000`.
 
 ## Dados e privacidade
 
-Nesta fase os dados permanecem no dispositivo. Não existe backend nem sincronização em nuvem. Não utilizar dados identificáveis de pacientes em testes, demonstrações ou ambientes não autorizados.
+Nesta fase, os dados permanecem no dispositivo. O projeto não possui backend nem sincronização em nuvem. Dados identificáveis de pacientes não devem ser utilizados em testes, demonstrações ou ambientes não autorizados.
+
+## Status
+
+**MVP em validação.** Testes automatizados e CI não equivalem a homologação assistencial. O projeto não substitui julgamento médico, protocolos institucionais ou validação clínica.
+
+## Autoria
+
+Idealizado e desenvolvido por **Dra. Joyce Radis**, médica de pronto-socorro e médica perita judicial, a partir de problemas reais de documentação e fluxo assistencial.
 
 ## Licença
 
