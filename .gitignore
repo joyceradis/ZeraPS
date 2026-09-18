@@ -1,0 +1,31 @@
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+*.local
+*.pem
+*.key
+credentials*.json
+service-account*.json
+
+# Dependencies / build / coverage
+node_modules/
+dist/
+build/
+coverage/
+
+# Clinical or operational exports must never be versioned
+exports/
+backups/
+local-data/
+*.patient.json
+*.clinical.json
+*.private.json
