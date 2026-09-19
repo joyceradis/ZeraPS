@@ -2,6 +2,20 @@
 
 **Estação clínica de pronto-socorro orientada a workflow, temporalidade e segurança documental.**
 
+> **English:** Emergency-care workflow and clinical documentation platform designed by a physician for high-volume acute care.
+
+## O que este repositório demonstra
+
+| Competência | Evidência no projeto |
+| --- | --- |
+| Modelagem de domínio clínico | atendimento representado como estados temporais, com admissão, pendências, reavaliação e documentação final |
+| Engenharia de segurança | invariantes explícitos para ausência de dados, scores incompletos, temporalidade e revisão médica |
+| Arquitetura frontend | módulos em JavaScript, protocolos declarativos, PWA offline-first e separação entre domínio, interface e regras |
+| Qualidade de software | testes automatizados com Node.js, verificação de sintaxe e CI |
+| Product thinking | problema assistencial real convertido em workflow, requisitos, documentação técnica e roadmap |
+
+**Portfolio signal:** clinical domain modeling · workflow/state design · JavaScript · PWA · automated testing · safety-by-design · product documentation
+
 [**Abrir aplicação**](https://joyceradis.github.io/ZeraPS/) · [Versão de trabalho](work-version/) · [Roadmap](ROADMAP.md)
 
 O Zera PS nasceu de um problema concreto de emergência: quando o volume assistencial sobe, tempo de escuta é consumido por redigitação, navegação e reconstrução da mesma história em documentos sucessivos.
