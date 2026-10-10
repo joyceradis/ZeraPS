@@ -4,15 +4,17 @@
 
 > **English:** Emergency-care workflow and clinical documentation platform designed by a physician for high-volume acute care.
 
-## Papel no ecossistema Radis
+## Identidade e limites do projeto
 
-**ZeraPS é o produto de workflow e documentação de pronto-socorro.** O [HMS](https://github.com/joyceradis/HMS) é uma experiência anterior da mesma linha de investigação em UX clínica; seus protótipos podem servir como referência, mas não compõem automaticamente o estado do ZeraPS.
+**Categoria:** produto de saúde · workflow de pronto-socorro independente.
 
-**Integração planejada:** a Radis poderá organizar o acesso a esta ferramenta, sem absorver o atendimento, seu estado ou dados assistenciais. A operação de pronto-socorro deve permanecer isolada de provas, conhecimento e produtividade pessoal.
+O **ZeraPS** concentra a evolução do sistema de documentação e fluxo clínico. O [HMS](https://github.com/joyceradis/HMS) preserva um protótipo de UX anterior. São projetos distintos, com código e histórico próprios.
 
-**Situação:** MVP em validação, não homologado para assistência, conforme a seção [Status](#status). O trabalho de interface em [PRs abertos](https://github.com/joyceradis/ZeraPS/pulls?q=is%3Aopen+is%3Apr) só passa a integrar a versão principal após sua própria revisão.
+A Radis é um sistema pessoal separado. A existência de um futuro link para abrir o ZeraPS **não configura fusão de produtos**, nem autoriza armazenar dados assistenciais na Radis. Não há integração de estados implementada.
 
-**Rastreabilidade:** [histórico deste README](https://github.com/joyceradis/ZeraPS/commits/main/README.md) · [todos os PRs](https://github.com/joyceradis/ZeraPS/pulls?q=is%3Apr).
+**Estado:** MVP em validação, sem homologação assistencial. Mudanças em interface em [PRs abertos](https://github.com/joyceradis/ZeraPS/pulls?q=is%3Aopen+is%3Apr) permanecem propostas até serem integradas.
+
+**Rastreabilidade:** [histórico do README](https://github.com/joyceradis/ZeraPS/commits/main/README.md) · [PRs](https://github.com/joyceradis/ZeraPS/pulls?q=is%3Apr).
 
 ## O que este repositório demonstra
 
