@@ -4,6 +4,16 @@
 
 > **English:** Emergency-care workflow and clinical documentation platform designed by a physician for high-volume acute care.
 
+## Papel no ecossistema Radis
+
+**ZeraPS é o produto de workflow e documentação de pronto-socorro.** O [HMS](https://github.com/joyceradis/HMS) é uma experiência anterior da mesma linha de investigação em UX clínica; seus protótipos podem servir como referência, mas não compõem automaticamente o estado do ZeraPS.
+
+**Integração planejada:** a Radis poderá organizar o acesso a esta ferramenta, sem absorver o atendimento, seu estado ou dados assistenciais. A operação de pronto-socorro deve permanecer isolada de provas, conhecimento e produtividade pessoal.
+
+**Situação:** MVP em validação, não homologado para assistência, conforme a seção [Status](#status). O trabalho de interface em [PRs abertos](https://github.com/joyceradis/ZeraPS/pulls?q=is%3Aopen+is%3Apr) só passa a integrar a versão principal após sua própria revisão.
+
+**Rastreabilidade:** [histórico deste README](https://github.com/joyceradis/ZeraPS/commits/main/README.md) · [todos os PRs](https://github.com/joyceradis/ZeraPS/pulls?q=is%3Apr).
+
 ## O que este repositório demonstra
 
 | Competência | Evidência no projeto |
